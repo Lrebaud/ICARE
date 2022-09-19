@@ -13,6 +13,10 @@ def drop_collinear_features(X, method, cutoff):
 
 
 def format_X(X):
+    check_array(X, force_all_finite='allow-nan')
+    #self.cols_name_ = X.columns.tolist()
+    #X = pd.DataFrame(data=X, columns=self.cols_name_)
+
     assert isinstance(X, (pd.DataFrame, np.ndarray))
     if isinstance(X, np.ndarray):
         X = pd.DataFrame(data=X,
@@ -66,11 +70,8 @@ class IcareSurv(BaseEstimator):
         }
 
     def fit(self, X, y, feature_groups=None):
-        self.cols_name_ = X.columns.tolist()
-        X = check_array(X, force_all_finite='allow-nan')
-        X = pd.DataFrame(data=X, columns=self.cols_name_)
-        original_X = X.copy()
         X = format_X(X)
+        original_X = X.copy()
         X = X.copy()
 
         if feature_groups is not None:
@@ -81,9 +82,9 @@ class IcareSurv(BaseEstimator):
             assert feature_groups is not None
 
         self.parameters_ = {}
-        self.rng = np.random.default_rng(self.random_state)
+        self.rng_ = np.random.default_rng(self.random_state)
         self.used_features_ = None
-        self.weights = None
+        self.weights_ = None
         self.std_f_ = None
         self.mean_f_ = None
         self.used_features_ = X.columns.values.copy()
@@ -91,7 +92,7 @@ class IcareSurv(BaseEstimator):
 
         if self.max_features < 1:
             rand_nb_features = np.max([1, int(self.max_features * len(self.used_features_))])
-            rand_feature_idx = self.rng.choice(np.arange(len(self.used_features_)),
+            rand_feature_idx = self.rng_.choice(np.arange(len(self.used_features_)),
                                                rand_nb_features,
                                                replace=False)
             if self.mandatory_features is not None:
@@ -125,7 +126,7 @@ class IcareSurv(BaseEstimator):
         X = X[self.used_features_]
 
         # drop highly correlated features
-        self.rng.shuffle(self.used_features_)
+        self.rng_.shuffle(self.used_features_)
         X = X[self.used_features_]
         if self.rho is not None and self.rho < 1:
             self.used_features_ = drop_collinear_features(X,
@@ -134,7 +135,7 @@ class IcareSurv(BaseEstimator):
             X = X[self.used_features_]
 
         # evaluate weight and score of each feature
-        self.weights = np.zeros(len(self.used_features_))
+        self.weights_ = np.zeros(len(self.used_features_))
         for feature_id in range(len(self.used_features_)):
             feature = self.used_features_[feature_id]
             mask_not_nan = ~X[feature].isna().values
@@ -158,11 +159,11 @@ class IcareSurv(BaseEstimator):
             abs_mean_score = np.max([1. - mean_score, mean_score])
             if self.cmin is not None and abs_mean_score >= self.cmin:
                 if len(np.unique(signs)) == 1:
-                    self.weights[feature_id] = signs[0]
+                    self.weights_[feature_id] = signs[0]
 
         #  select features with a determied weight and score > cmin
-        mask_feature_non_zero = self.weights != 0
-        self.weights = self.weights[mask_feature_non_zero]
+        mask_feature_non_zero = self.weights_ != 0
+        self.weights_ = self.weights_[mask_feature_non_zero]
         self.used_features_ = self.used_features_[mask_feature_non_zero]
 
         X = X[self.used_features_]
@@ -182,19 +183,16 @@ class IcareSurv(BaseEstimator):
         return self
 
     def predict(self, X):
-        self.cols_name_ = X.columns.tolist()
-        X = check_array(X, force_all_finite='allow-nan')
-        X = pd.DataFrame(data=X, columns=self.cols_name_)
         X = format_X(X)
-
         X = X.copy()
         if len(self.used_features_) == 0:
             return np.ones(X.shape[0])
 
         X = X[self.used_features_]
 
-        X = X * self.weights
+
         X = (X - self.mean_f_.values) / self.std_f_.values
+        X = X * self.weights_
         pred = np.nanmean(X, axis=1)
 
         if self.normalize_output:
@@ -214,7 +212,7 @@ class IcareSurv(BaseEstimator):
         }
 
     def get_feature_importance(self):
-        return self.used_features_, self.weights
+        return self.used_features_, self.weights_
 
 
 from joblib import Parallel, delayed
@@ -267,9 +265,6 @@ class BaggedIcareSurv(IcareSurv):
         return estimator
 
     def fit(self, X, y, feature_groups=None):
-        self.cols_name_ = X.columns.tolist()
-        X = check_array(X, force_all_finite='allow-nan')
-        X = pd.DataFrame(data=X, columns=self.cols_name_)
         X = format_X(X)
         X = X.copy()
 
@@ -292,9 +287,6 @@ class BaggedIcareSurv(IcareSurv):
         return estimator.predict(X)
 
     def predict(self, X):
-        self.cols_name_ = X.columns.tolist()
-        X = check_array(X, force_all_finite='allow-nan')
-        X = pd.DataFrame(data=X, columns=self.cols_name_)
         X = format_X(X)
         X = X.copy()
 
