@@ -4,6 +4,7 @@ from icare.metrics import *
 from sklearn.base import BaseEstimator
 from sklearn.utils import check_array
 
+
 def drop_collinear_features(X, method, cutoff):
     corr_matrix = X.corr(method=method).abs()
     upper = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(bool))
@@ -45,6 +46,8 @@ class IcareSurv(BaseEstimator):
                  cmin=None,
                  normalize_output=False,
                  max_features=1.,
+                 features_groups_to_use=None,
+                 mandatory_features=None,
                  random_state=None):
 
         self.correlation_method = correlation_method
@@ -54,49 +57,86 @@ class IcareSurv(BaseEstimator):
         self.normalize_output = normalize_output
         self.max_features = max_features
         self.random_state = random_state
-
+        self.mandatory_features = mandatory_features
+        self.features_groups_to_use = features_groups_to_use
 
     def _more_tags(self):
         return {
             'allow_nan': True,
         }
 
-    def fit(self, X, y):
+    def fit(self, X, y, feature_groups=None):
+        self.cols_name_ = X.columns.tolist()
         X = check_array(X, force_all_finite='allow-nan')
+        X = pd.DataFrame(data=X, columns=self.cols_name_)
         original_X = X.copy()
         X = format_X(X)
         X = X.copy()
 
+        if feature_groups is not None:
+            assert len(feature_groups) == X.shape[1]
+            assert self.features_groups_to_use is not None
+            feature_groups = np.array(feature_groups)
+        if self.features_groups_to_use is not None:
+            assert feature_groups is not None
 
         self.parameters_ = {}
-        self.parameters_['rng'] = np.random.default_rng(self.random_state)
-        self.parameters_['nb_features'] = None
-        self.parameters_['features_name'] = None
-        self.parameters_['used_features'] = None
-        self.parameters_['weights'] = None
-        self.parameters_['std_f'] = None
-        self.parameters_['mean_f'] = None
-        self.parameters_['features_name'] = X.columns.values.copy()
-        base_n_features = len(self.parameters_['features_name'])
+        self.rng = np.random.default_rng(self.random_state)
+        self.used_features_ = None
+        self.weights = None
+        self.std_f_ = None
+        self.mean_f_ = None
+        self.used_features_ = X.columns.values.copy()
+        self.feature_groups_ = feature_groups
+
+        if self.max_features < 1:
+            rand_nb_features = np.max([1, int(self.max_features * len(self.used_features_))])
+            rand_feature_idx = self.rng.choice(np.arange(len(self.used_features_)),
+                                               rand_nb_features,
+                                               replace=False)
+            if self.mandatory_features is not None:
+                mandatory_features_idx = []
+                feature_list = self.used_features_.tolist()
+                for f in self.mandatory_features:
+                    mandatory_features_idx.append(feature_list.index(f))
+                rand_feature_idx = np.concatenate([rand_feature_idx, np.array(mandatory_features_idx)])
+
+            self.used_features_ = self.used_features_[rand_feature_idx]
+            if self.feature_groups_ is not None:
+                self.feature_groups_ = self.feature_groups_[rand_feature_idx]
+
+            if len(self.used_features_) == 1:
+                self.used_features_ = [self.used_features_]
+
+        if self.features_groups_to_use is not None:
+            sfeatures = []
+            for fid in range(len(self.used_features_)):
+                g = self.feature_groups_[fid]
+                if g in self.features_groups_to_use or \
+                        self.used_features_[fid] in self.mandatory_features:
+                    sfeatures.append(fid)
+
+            self.used_features_ = self.used_features_[sfeatures]
+            self.feature_groups_ = self.feature_groups_[sfeatures]
+
+            if len(self.used_features_) == 1:
+                self.used_features_ = [self.used_features_]
+
+        X = X[self.used_features_]
 
         # drop highly correlated features
-        self.parameters_['rng'].shuffle(self.parameters_['features_name'])
-        X = X[self.parameters_['features_name']]
-        self.parameters_['used_features'] = self.parameters_['features_name']
+        self.rng.shuffle(self.used_features_)
+        X = X[self.used_features_]
         if self.rho is not None and self.rho < 1:
-            self.parameters_['used_features'] = drop_collinear_features(X,
-                                                         method=self.correlation_method,
-                                                         cutoff=self.rho)
-            X = X[self.parameters_['used_features']]
-        self.parameters_['nb_features'] = len(self.parameters_['used_features'])
-
-        # with open('print_'+str(np.random.randint(1000000))+'.txt', 'w') as f:
-        #    f.write(','.join(self.parameters_['used_features'.astype('str').tolist())+'\n\n')
+            self.used_features_ = drop_collinear_features(X,
+                                                          method=self.correlation_method,
+                                                          cutoff=self.rho)
+            X = X[self.used_features_]
 
         # evaluate weight and score of each feature
-        self.parameters_['weights'] = np.zeros(self.parameters_['nb_features'])
-        for feature_id in range(self.parameters_['nb_features']):
-            feature = self.parameters_['used_features'][feature_id]
+        self.weights = np.zeros(len(self.used_features_))
+        for feature_id in range(len(self.used_features_)):
+            feature = self.used_features_[feature_id]
             mask_not_nan = ~X[feature].isna().values
 
             signs, scores = [], []
@@ -118,52 +158,43 @@ class IcareSurv(BaseEstimator):
             abs_mean_score = np.max([1. - mean_score, mean_score])
             if self.cmin is not None and abs_mean_score >= self.cmin:
                 if len(np.unique(signs)) == 1:
-                    self.parameters_['weights'][feature_id] = signs[0]
+                    self.weights[feature_id] = signs[0]
 
         #  select features with a determied weight and score > cmin
-        mask_feature_non_zero = self.parameters_['weights'] != 0
-        self.parameters_['weights'] = self.parameters_['weights'][mask_feature_non_zero]
-        self.parameters_['used_features'] = self.parameters_['used_features'][mask_feature_non_zero]
-        self.parameters_['nb_features'] = len(self.parameters_['used_features'])
+        mask_feature_non_zero = self.weights != 0
+        self.weights = self.weights[mask_feature_non_zero]
+        self.used_features_ = self.used_features_[mask_feature_non_zero]
 
-        if self.parameters_['nb_features'] > 0:
-            rand_nb_features = np.max([1, int(self.max_features * base_n_features)])
-            if rand_nb_features < self.parameters_['nb_features']:
-                rand_feature_idx = self.parameters_['rng'].choice(np.arange(self.parameters_['nb_features']),
-                                                   rand_nb_features,
-                                                   replace=False)
+        X = X[self.used_features_]
 
-                self.parameters_['used_features'] = self.parameters_['used_features'][rand_feature_idx]
-                self.parameters_['nb_features'] = len(self.parameters_['used_features'])
-                self.parameters_['weights'] = self.parameters_['weights'][rand_feature_idx]
+        # features normalization
+        self.mean_f_, self.std_f_ = X.mean(), X.std()
+        self.std_f_[self.std_f_ == 0] = 1e-6
 
-            X = X[self.parameters_['used_features']]
-
-            # features normalization
-            self.parameters_['mean_f'], self.parameters_['std_f'] = X.mean(), X.std()
-            self.parameters_['std_f'][self.parameters_['std_f'] == 0] = 1e-6
-
-            #  output normalization
-            if self.normalize_output:
-                self.mean_pred, self.std_pred = 0, 1.
-                train_pred = self.predict(original_X)
-                self.mean_pred, self.std_pred = np.nanmean(train_pred), np.nanstd(train_pred)
-                if self.std_pred == 0:
-                    self.std_pred = 1e-6
+        #  output normalization
+        if self.normalize_output:
+            self.mean_pred, self.std_pred = 0, 1.
+            train_pred = self.predict(original_X)
+            self.mean_pred, self.std_pred = np.nanmean(train_pred), np.nanstd(train_pred)
+            if self.std_pred == 0:
+                self.std_pred = 1e-6
 
         return self
 
     def predict(self, X):
+        self.cols_name_ = X.columns.tolist()
         X = check_array(X, force_all_finite='allow-nan')
+        X = pd.DataFrame(data=X, columns=self.cols_name_)
         X = format_X(X)
 
         X = X.copy()
-        if self.parameters_['nb_features'] == 0:
+        if len(self.used_features_) == 0:
             return np.ones(X.shape[0])
 
-        X = X[self.parameters_['used_features']]
-        X = X * self.parameters_['weights']
-        X = (X - self.parameters_['mean_f'].values) / self.parameters_['std_f'].values
+        X = X[self.used_features_]
+
+        X = X * self.weights
+        X = (X - self.mean_f_.values) / self.std_f_.values
         pred = np.nanmean(X, axis=1)
 
         if self.normalize_output:
@@ -182,14 +213,8 @@ class IcareSurv(BaseEstimator):
             'random_state': self.random_state,
         }
 
-
-    #def score(self, X, y):
-    #    pred = self.predict(X)
-    #    score = harrell_cindex(y, pred)
-    #    return score
-
     def get_feature_importance(self):
-        return self.parameters_['used_features'], self.parameters_['weights']
+        return self.used_features_, self.weights
 
 
 from joblib import Parallel, delayed
@@ -231,18 +256,20 @@ class BaggedIcareSurv(IcareSurv):
                 model = IcareSurv(**params)
                 self.estimators_.append(model)
 
-    def fit_estimator(self, estimator_id, X, y):
+    def fit_estimator(self, estimator_id, X, y, feature_groups):
         estimator = self.estimators_[estimator_id]
         estimators_random_state = self.estimators_random_state_[estimator_id]
         estimator_rng = np.random.default_rng(estimators_random_state)
         resample_idx = estimator_rng.choice(np.arange(X.shape[0]), X.shape[0], replace=True)
-        estimator.fit(X.iloc[resample_idx], y[resample_idx])
+        estimator.fit(X.iloc[resample_idx], y[resample_idx], feature_groups)
 
         # print(estimator.get_feature_importance())
         return estimator
 
-    def fit(self, X, y):
+    def fit(self, X, y, feature_groups=None):
+        self.cols_name_ = X.columns.tolist()
         X = check_array(X, force_all_finite='allow-nan')
+        X = pd.DataFrame(data=X, columns=self.cols_name_)
         X = format_X(X)
         X = X.copy()
 
@@ -256,7 +283,7 @@ class BaggedIcareSurv(IcareSurv):
         self.create_estimators()
 
         self.estimators_ = Parallel(n_jobs=self.n_jobs)(
-            delayed(self.fit_estimator)(estimator_id, X, y)
+            delayed(self.fit_estimator)(estimator_id, X, y, feature_groups)
             for estimator_id in range(self.n_estimators))
 
         return self
@@ -265,7 +292,9 @@ class BaggedIcareSurv(IcareSurv):
         return estimator.predict(X)
 
     def predict(self, X):
+        self.cols_name_ = X.columns.tolist()
         X = check_array(X, force_all_finite='allow-nan')
+        X = pd.DataFrame(data=X, columns=self.cols_name_)
         X = format_X(X)
         X = X.copy()
 
@@ -274,7 +303,8 @@ class BaggedIcareSurv(IcareSurv):
             for estimator in self.estimators_)
 
         preds = np.array(preds)
-        return self.aggregation_method_fn_(preds, axis=0)
+        return self.aggregation_method_fn_(preds,
+                                           axis=0)
 
     def get_params(self, deep=False):
         return {
@@ -303,7 +333,3 @@ class BaggedIcareSurv(IcareSurv):
             })
         importance = pd.DataFrame(data=rows).sort_values(by='average sign', ascending=False)
         return importance
-
-
-
-
