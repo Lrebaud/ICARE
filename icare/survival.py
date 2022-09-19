@@ -1,8 +1,9 @@
 import pandas as pd
-import numpy as np
-from icare.metrics import *
+from joblib import Parallel, delayed
 from sklearn.base import BaseEstimator
 from sklearn.utils import check_array
+
+from icare.metrics import *
 
 
 def drop_collinear_features(X, method, cutoff):
@@ -12,10 +13,8 @@ def drop_collinear_features(X, method, cutoff):
     return np.array([x for x in X.columns if x not in to_drop])
 
 
-def format_X(X):
+def format_x(X):
     check_array(X, force_all_finite='allow-nan')
-    #self.cols_name_ = X.columns.tolist()
-    #X = pd.DataFrame(data=X, columns=self.cols_name_)
 
     assert isinstance(X, (pd.DataFrame, np.ndarray))
     if isinstance(X, np.ndarray):
@@ -43,11 +42,70 @@ method_ignore_score = ['HR']
 
 
 class IcareSurv(BaseEstimator):
+    """
+        IcareSurv estimator.
+        This survival model assign weights of -1 or +1 to features to reduce
+        overfitting risk. It evaluates features in univariate to reduce this risk
+        even more.
+        Predicts a continuous value that rank the samples (not calibrated).
+
+        Parameters
+        ----------
+        rho : None or float in [0, 1[, default=0.5
+            The threshold for the correlation removal. Is None, no feature
+            removal is done. If defined, it will randomly drop a feature of
+            each pair that has an absolute correlation > rho.
+
+        correlation_method: 'pearson' or 'spearman', default='pearson'
+            How to compute the correlation between feature
+
+        sign_method: a list, default=['tAUC', 'harrell', 'uno']
+            Which method to use to determine the signs of the feature.
+            It should be list containing at least one of :
+            - 'harrell': Harrell's concordance index (C-index)
+            - 'uno': 'Uno's concordance index (attempt to make Harrell's C-index
+            more robust)
+            - 'tAUC': time-dependant ROC-AUC
+            If multiple method are selected, only the features that have the
+            same sign for all methods will be used by the model
+
+        cmin: None or a float in [0.5, 1[, default=0.6
+            The threshold for feature selection based on their scores with the
+            signs method. For each score of each method abs_score is computed
+            (defined by max(score, 1-score)). Then mean_abs_score is computed
+            by averaging all abs_score. If mean_abs_score < cmin, the feature
+            is dropped
+
+        max_features: float in [0,1], default=0.9
+            Proportion of feature to randomly select at the beginning of the
+            fitting. It happens before any feature selection.
+
+        features_groups_to_use: None or list, default=None
+            In a context where features are grouped (e.g. radiomic features)
+            from the same mask, this is used to specify which groups should be
+            used by the model. The random feature selection of max_features
+            happens before this step. If None, all the features are kept.
+            If this is defined, the argument feature_groups of the fit()
+            function should be defined.
+
+        mandatory_features: None or list, default=None
+            List of feature to always include in the model.
+
+        random_state : int, RandomState instance or None, default=None
+            Control all the random steps of the model
+
+        Attributes
+        ----------
+
+        Examples
+        --------
+        """
+
     def __init__(self,
-                 rho=None,
+                 rho=0.5,
                  correlation_method='pearson',
-                 sign_method=['harrell'],
-                 cmin=None,
+                 sign_method=['tAUC', 'harrell', 'uno'],
+                 cmin=0.6,
                  normalize_output=False,
                  max_features=1.,
                  features_groups_to_use=None,
@@ -70,7 +128,30 @@ class IcareSurv(BaseEstimator):
         }
 
     def fit(self, X, y, feature_groups=None):
-        X = format_X(X)
+        """
+            Fit the model on the given data.
+            Parameters
+            ----------
+            X : numpy array or pandas DataFrame with shape = (n_samples,n_features)
+                Feature set
+            y : 1d numpy-array, or structured array, shape = (n_samples,))
+                Target event to predict
+                OR
+                Survival times of test data. A structured array containing
+                the binary event indicator as first field,
+                and time of event or time of censoring as second field.
+            feature_groups : array-like of shape (n_features,), default=None
+                Indicates to which group each feature belongs. If None,
+                no feature group selection is done.
+                If the parameter features_groups_to_use is not None, this argument
+                should be specified.
+
+            Returns
+            -------
+            The fitted model.
+            """
+
+        X = format_x(X)
         original_X = X.copy()
         X = X.copy()
 
@@ -90,11 +171,13 @@ class IcareSurv(BaseEstimator):
         self.used_features_ = X.columns.values.copy()
         self.feature_groups_ = feature_groups
 
+        # randomly select some features and keep the ones that are mandatory
+        # or in defined features groups
         if self.max_features < 1:
             rand_nb_features = np.max([1, int(self.max_features * len(self.used_features_))])
             rand_feature_idx = self.rng_.choice(np.arange(len(self.used_features_)),
-                                               rand_nb_features,
-                                               replace=False)
+                                                rand_nb_features,
+                                                replace=False)
             if self.mandatory_features is not None:
                 mandatory_features_idx = []
                 feature_list = self.used_features_.tolist()
@@ -161,42 +244,38 @@ class IcareSurv(BaseEstimator):
                 if len(np.unique(signs)) == 1:
                     self.weights_[feature_id] = signs[0]
 
-        #  select features with a determied weight and score > cmin
+        # select features with a determied weight and score > cmin
         mask_feature_non_zero = self.weights_ != 0
         self.weights_ = self.weights_[mask_feature_non_zero]
         self.used_features_ = self.used_features_[mask_feature_non_zero]
-
         X = X[self.used_features_]
 
         # features normalization
         self.mean_f_, self.std_f_ = X.mean(), X.std()
         self.std_f_[self.std_f_ == 0] = 1e-6
 
-        #  output normalization
-        if self.normalize_output:
-            self.mean_pred, self.std_pred = 0, 1.
-            train_pred = self.predict(original_X)
-            self.mean_pred, self.std_pred = np.nanmean(train_pred), np.nanstd(train_pred)
-            if self.std_pred == 0:
-                self.std_pred = 1e-6
+        # output normalization
+        self.mean_pred_, self.std_pred_ = 0, 1.
+        train_pred = self.predict(original_X)
+        self.mean_pred_, self.std_pred_ = np.nanmean(train_pred), np.nanstd(train_pred)
+        if self.std_pred_ == 0:
+            self.std_pred_ = 1e-6
 
         return self
 
     def predict(self, X):
-        X = format_X(X)
+        X = format_x(X)
         X = X.copy()
         if len(self.used_features_) == 0:
             return np.ones(X.shape[0])
 
         X = X[self.used_features_]
 
-
         X = (X - self.mean_f_.values) / self.std_f_.values
         X = X * self.weights_
         pred = np.nanmean(X, axis=1)
 
-        if self.normalize_output:
-            pred = (pred - self.mean_pred) / self.std_pred
+        pred = (pred - self.mean_pred_) / self.std_pred_
 
         return pred
 
@@ -206,31 +285,62 @@ class IcareSurv(BaseEstimator):
             'rho': self.rho,
             'cmin': self.cmin,
             'sign_method': self.sign_method,
-            'normalize_output': self.normalize_output,
             'max_features': self.max_features,
             'random_state': self.random_state,
         }
 
-    def get_feature_importance(self):
+    def get_signs(self):
         return self.used_features_, self.weights_
 
 
-from joblib import Parallel, delayed
-
-
 class BaggedIcareSurv(IcareSurv):
+    """
+        Bagged IcareSurv estimator.
+        This survival model ensemble a set of IcareSurv models with bootstrap
+        resampling of their respective train sets. Once fitted, each model
+        make a prediction and all teir prediction are aggregated.
+        Predicts a continuous value that rank the samples (not calibrated).
+
+        Parameters
+        ----------
+        n_estimators : int >= 1, default=10
+            How many IcareSurv estimators should be used by the model
+
+        parameters_sets : list of dictionaries or None, default=None
+            A list a dictionaries. Each dictionary is a set of hyperparameters
+            for the IcareSurv estimator. If the length of this list is > 1, then
+            each estimator will randomly pick one of the hyperparameters sets of
+            the list. If None, the default parameters of IcareSurv is used for
+            all estimator.
+
+        aggregation_method='mean' or 'median, default='mean'
+            How to aggreate the predictions of the estimator.
+
+        n_jobs=int, default=None
+        The number of jobs to run in parallel. :meth:`fit` and :meth:`predict`
+        are all parallelized over the estimators.
+        None means 1. -1 means using all processors.
+
+        random_state : int, RandomState instance or None, default=None
+            Control all the random steps of the model
+
+        Attributes
+        ----------
+
+        Examples
+        --------
+        """
+
     def __init__(self,
-                 n_estimators=1,
+                 n_estimators=10,
                  parameters_sets=None,
                  aggregation_method='mean',
-                 normalize_estimators=True,
                  n_jobs=1,
                  random_state=None):
 
         self.n_estimators = n_estimators
         self.parameters_sets = parameters_sets
         self.aggregation_method = aggregation_method
-        self.normalize_estimators = normalize_estimators
         self.n_jobs = n_jobs
         self.random_state = random_state
 
@@ -249,7 +359,6 @@ class BaggedIcareSurv(IcareSurv):
                 self.estimators_.append(model)
             else:
                 params = self.rng_.choice(self.parameters_sets, 1)[0]
-                params['normalize_output'] = self.normalize_estimators
                 params['random_state'] = estimator_random_state
                 model = IcareSurv(**params)
                 self.estimators_.append(model)
@@ -260,12 +369,33 @@ class BaggedIcareSurv(IcareSurv):
         estimator_rng = np.random.default_rng(estimators_random_state)
         resample_idx = estimator_rng.choice(np.arange(X.shape[0]), X.shape[0], replace=True)
         estimator.fit(X.iloc[resample_idx], y[resample_idx], feature_groups)
-
-        # print(estimator.get_feature_importance())
         return estimator
 
     def fit(self, X, y, feature_groups=None):
-        X = format_X(X)
+        """
+            Fit the model on the given data.
+            Parameters
+            ----------
+            X : numpy array or pandas DataFrame with shape = (n_samples,n_features)
+                Feature set
+            y : 1d numpy-array, or structured array, shape = (n_samples,))
+                Target event to predict
+                OR
+                Survival times of test data. A structured array containing
+                the binary event indicator as first field,
+                and time of event or time of censoring as second field.
+            feature_groups : array-like of shape (n_features,), default=None
+                Indicates to which group each feature belongs. If None,
+                no feature group selection is done.
+                If the parameter features_groups_to_use is not None, this argument
+                should be specified.
+
+            Returns
+            -------
+            The fitted model.
+        """
+
+        X = format_x(X)
         X = X.copy()
 
         self.rng_ = np.random.default_rng(self.random_state)
@@ -287,7 +417,7 @@ class BaggedIcareSurv(IcareSurv):
         return estimator.predict(X)
 
     def predict(self, X):
-        X = format_X(X)
+        X = format_x(X)
         X = X.copy()
 
         preds = Parallel(n_jobs=self.n_jobs)(
@@ -303,7 +433,6 @@ class BaggedIcareSurv(IcareSurv):
             'n_estimators': self.n_estimators,
             'parameters_sets': self.parameters_sets,
             'aggregation_method': self.aggregation_method,
-            'normalize_estimators': self.normalize_estimators,
             'n_jobs': self.n_jobs,
             'random_state': self.random_state,
         }
@@ -311,7 +440,7 @@ class BaggedIcareSurv(IcareSurv):
     def get_feature_importance(self):
         all_importances = {}
         for m in self.estimators_:
-            features, weights = m.get_feature_importance()
+            features, weights = m.get_signs()
             for fid in range(len(features)):
                 if features[fid] not in all_importances:
                     all_importances[features[fid]] = [weights[fid]]
