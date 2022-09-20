@@ -104,9 +104,8 @@ class IcareSurv(BaseEstimator):
     def __init__(self,
                  rho=0.5,
                  correlation_method='pearson',
-                 sign_method=['tAUC', 'harrell', 'uno'],
+                 sign_method='tAUC,harrell,uno',
                  cmin=0.6,
-                 normalize_output=False,
                  max_features=1.,
                  features_groups_to_use=None,
                  mandatory_features=None,
@@ -116,7 +115,6 @@ class IcareSurv(BaseEstimator):
         self.rho = rho
         self.cmin = cmin
         self.sign_method = sign_method
-        self.normalize_output = normalize_output
         self.max_features = max_features
         self.random_state = random_state
         self.mandatory_features = mandatory_features
@@ -155,12 +153,16 @@ class IcareSurv(BaseEstimator):
         original_X = X.copy()
         X = X.copy()
 
+        self.n_features_in_ = X.shape[1]
+
         if feature_groups is not None:
             assert len(feature_groups) == X.shape[1]
             assert self.features_groups_to_use is not None
             feature_groups = np.array(feature_groups)
         if self.features_groups_to_use is not None:
             assert feature_groups is not None
+
+        self.sign_method_lst_ = self.sign_method.split(',')
 
         self.parameters_ = {}
         self.rng_ = np.random.default_rng(self.random_state)
@@ -224,7 +226,7 @@ class IcareSurv(BaseEstimator):
             mask_not_nan = ~X[feature].isna().values
 
             signs, scores = [], []
-            for method in self.sign_method:
+            for method in self.sign_method_lst_:
                 try:
                     score = sign_eval_method[method](y[mask_not_nan],
                                                      X.iloc[mask_not_nan][feature].values)
@@ -238,11 +240,12 @@ class IcareSurv(BaseEstimator):
                 if method not in method_ignore_score:
                     scores.append(score)
 
-            mean_score = np.nanmean(scores)
-            abs_mean_score = np.max([1. - mean_score, mean_score])
-            if self.cmin is not None and abs_mean_score >= self.cmin:
-                if len(np.unique(signs)) == 1:
-                    self.weights_[feature_id] = signs[0]
+            if len(scores) > 0 and not np.isnan(np.unique(scores)[0]):
+                mean_score = np.nanmean(scores)
+                abs_mean_score = np.max([1. - mean_score, mean_score])
+                if self.cmin is not None and abs_mean_score >= self.cmin:
+                    if len(np.unique(signs)) == 1:
+                        self.weights_[feature_id] = signs[0]
 
         # select features with a determied weight and score > cmin
         mask_feature_non_zero = self.weights_ != 0
@@ -397,6 +400,8 @@ class BaggedIcareSurv(IcareSurv):
 
         X = format_x(X)
         X = X.copy()
+
+        self.n_features_in_ = X.shape[1]
 
         self.rng_ = np.random.default_rng(self.random_state)
 

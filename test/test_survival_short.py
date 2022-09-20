@@ -10,9 +10,9 @@ def generate_random_param_set():
     return {
         'rho': np.random.uniform(0.01, 1.),
         'correlation_method': np.random.choice(['spearman', 'pearson']),
-        'sign_method': np.random.choice(['harrell', 'tAUC', 'uno'],
+        'sign_method': ','.join(np.random.choice(['harrell', 'tAUC', 'uno'],
                                         np.random.randint(1, 4),
-                                        replace=False).tolist(),
+                                        replace=False).tolist()),
         'cmin': np.random.uniform(0.5, 1.),
         'max_features': np.random.uniform(0.5, 1.),
         'random_state': None,
