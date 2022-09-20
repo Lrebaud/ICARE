@@ -1,5 +1,7 @@
-<div style="text-align:center"><img src="img/logo.png" alt="drawing" width="150"/></div>
-<h1>ICARE</h1>
+<h1>
+  <img align="right" height="100" src="img/logo.png">
+   <br> ICARE
+</h1>
 
 ```blockquote
 Rebaud, L.*, Escobar, T.*, Khalid, F., Girum, K., Buvat, I.: Head and Neck Tumor and Lymph Node 
