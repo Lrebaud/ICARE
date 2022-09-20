@@ -23,18 +23,18 @@ This makes the model
 ### Installing
 
 * Via PyPI:
-```
-$ pip install icare
+```shell
+pip install icare
 ```
 or via GitHub
-```
-$ pip install git+https://github.com/Lrebaud/ICARE.git
+```shell
+pip install git+https://github.com/Lrebaud/ICARE.git
 ```
 
 ### Utilisation
 
 The model is used like any other scikit-learn estimator:
-```
+```python
 from sksurv import datasets
 from sksurv.preprocessing import OneHotEncoder
 from icare.metrics import harrell_cindex
@@ -52,7 +52,7 @@ harrell_cindex(y, pred)
 ```
 
 It can be used with all scikit-learn function:
-```
+```python
 from sklearn.model_selection import cross_val_score, ShuffleSplit
 
 model = IcareSurv()
@@ -66,7 +66,7 @@ score = cross_val_score(model, X, y,
 If you are working with a censored target, you need to create a
 structured array containing both the time and the censoring:
 
-```
+```python
 from sksurv.util import Surv
 y = Surv.from_arrays(event=np.array(event_happened).astype('bool'),
                      time=time)
