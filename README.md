@@ -1,4 +1,5 @@
-# ICARE
+<div style="text-align:center"><img src="img/logo.png" alt="drawing" width="150"/></div>
+<h1>ICARE</h1>
 
 ```blockquote
 Rebaud, L.*, Escobar, T.*, Khalid, F., Girum, K., Buvat, I.: Head and Neck Tumor and Lymph Node 
@@ -7,8 +8,7 @@ In: Lecture Notes in Computer Science (LNCS) Challenges (in press)
 ```
 
 This package contains the Individual Coefficient Approximation for Risk Estimation
-(ICARE) survival model. 
-
+(ICARE) survival model.
 For ensembling strategies, it also includes a dedicated bagging aggregator.
 
 
