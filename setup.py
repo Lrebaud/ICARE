@@ -18,6 +18,8 @@ setup(
     license='MIT',
     packages=['icare'],
     install_requires=[
+        'matplotlib',
+        'seaborn',
         'scikit-survival',
     ],
     tests_require=['pytest'],

@@ -13,13 +13,14 @@ def generate_random_param_set():
     return {
         'rho': np.random.uniform(0.01, 1.),
         'correlation_method': np.random.choice(['spearman', 'pearson']),
-        'sign_method': np.random.choice(['harrell', 'tAUC', 'uno'],
+        'sign_method': ','.join(np.random.choice(['harrell', 'tAUC', 'uno'],
                                         np.random.randint(1, 4),
-                                        replace=False).tolist(),
+                                        replace=False).tolist()),
         'cmin': np.random.uniform(0.5, 1.),
         'max_features': np.random.uniform(0.5, 1.),
         'random_state': None,
     }
+
 
 
 def generate_random_param_set_bagged():
@@ -66,6 +67,22 @@ def test_no_censoring():
 
     y = [x[1] for x in y]
     ml.fit(X, y)
+
+def test_feature_sign():
+    X, y = datasets.load_veterans_lung_cancer()
+    X = OneHotEncoder().fit_transform(X)
+
+    ml = BaggedIcareSurv(n_estimators=50,
+                         n_jobs=-1,
+                         parameters_sets=[{'max_features':1,
+                                           'rho' : None,
+                                           'cmin': 0.5}])
+    ml.fit(X, y)
+    fs = ml.average_feature_signs_
+    fs_kar = fs[fs['feature']=='Karnofsky_score']['average sign'].values[0]
+    fs_celltype = fs[fs['feature']=='Celltype=smallcell']['average sign'].values[0]
+    assert fs_kar < 0
+    assert fs_celltype > 0
 
 
 def test_scorer():
@@ -125,7 +142,7 @@ def test_sksurv_datasets_bagged():
 
 
 def test_hecktor():
-    df = pd.read_csv('../data/df_train.csv', index_col='PatientID')
+    df = pd.read_csv('data/df_train.csv', index_col='PatientID')
     features = list(set(df.columns.tolist()) - set(['Relapse', 'RFS', 'Task 1', 'Task 2', 'CenterID']))
     features = [x for x in features if 'lesions_merged' not in x and 'lymphnodes_merged' not in x]
     extra_features = ['Gender',

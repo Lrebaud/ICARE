@@ -8,9 +8,25 @@ This package contains the Individual Coefficient Approximation for Risk Estimati
 The Individual Coefficient Approximation for Risk Estimation (ICARE) survival model
 use a minimal learning strategy to reduce to risk of overfitting on the often 
 noisy and censored survival data.
+To do so:
+ * drop highly correlated features
+ * for each feature:
+   * evaluate feature sign in univariate
+   * normalize the feature
+   * multiply the feature by its sign
+ * the prediction is computed with the mean of all signed features
 
+This makes the model more robust to overfitting. It also makes it
+resilient to the curse of dimensionality. We hypothesize that it is 
+better to have too many features than too few for this model.
+This algorithm is implemented by the `IcareSurv` estimator in this
+package.
 
-This makes the model 
+To improve the performances, this model can be bagged. The package
+provide `BaggedIcareSurv` estimator which does the ensembling of 
+multiple `IcareSurv` estimators. 
+
+The models make predictions that are anti-concordants with the target.
 
 
 ## Getting Started

@@ -264,6 +264,8 @@ class IcareSurv(BaseEstimator):
         if self.std_pred_ == 0:
             self.std_pred_ = 1e-6
 
+        self.features_signs_ = self.used_features_, self.weights_
+
         return self
 
     def predict(self, X):
@@ -291,9 +293,6 @@ class IcareSurv(BaseEstimator):
             'max_features': self.max_features,
             'random_state': self.random_state,
         }
-
-    def get_signs(self):
-        return self.used_features_, self.weights_
 
 
 class BaggedIcareSurv(IcareSurv):
@@ -416,6 +415,8 @@ class BaggedIcareSurv(IcareSurv):
             delayed(self.fit_estimator)(estimator_id, X, y, feature_groups)
             for estimator_id in range(self.n_estimators))
 
+        self.average_feature_signs_ = self.get_feature_importance()
+
         return self
 
     def predict_estimator(self, estimator, X):
@@ -445,12 +446,16 @@ class BaggedIcareSurv(IcareSurv):
     def get_feature_importance(self):
         all_importances = {}
         for m in self.estimators_:
-            features, weights = m.get_signs()
+            features, weights = m.features_signs_
+            if len(features) == 0:
+                continue
             for fid in range(len(features)):
                 if features[fid] not in all_importances:
                     all_importances[features[fid]] = [weights[fid]]
                 else:
                     all_importances[features[fid]].append(weights[fid])
+        if len(all_importances) == 0:
+            return None
         rows = []
         for f in all_importances:
             rows.append({
