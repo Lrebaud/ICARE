@@ -1,5 +1,7 @@
+[![PyPI version](https://badge.fury.io/py/icare.svg)](https://badge.fury.io/py/icare)
+
 <h1>
-  <img align="right" height="100" src="img/logo.png">
+  <img align="right" height="100" src="https://raw.githubusercontent.com/Lrebaud/ICARE/main/img/logo.png">
    <br> ICARE
 </h1>
 
@@ -17,29 +19,29 @@ For ensembling strategies, it also includes a dedicated bagging aggregator.
 ## Description
 
 The Individual Coefficient Approximation for Risk Estimation (ICARE) survival model
-use a minimal learning strategy to reduce to risk of overfitting on the often 
+uses a minimal learning strategy to reduce to risk of overfitting on the often 
 noisy and censored survival data.
 To do so:
  * drop highly correlated features
  * for each feature:
-   * evaluate feature sign in univariate
+   * evaluate feature sign using an univariate approach
    * normalize the feature
    * multiply the feature by its sign
- * the prediction is computed with the mean of all signed features
+ * the prediction is computed as the mean of all signed features
 
 This makes the model more robust to overfitting. It also makes it
 resilient to the curse of dimensionality. We hypothesize that it is 
 better to have too many features than too few for this model.
-This algorithm is implemented by the `IcareSurv` estimator in this
+This algorithm is implemented in the `IcareSurv` estimator in this
 package.
 
-To improve the performances, this model can be bagged. The package
-provide `BaggedIcareSurv` estimator which does the ensembling of 
+To improve the performance, this model can be bagged. The package
+provides `BaggedIcareSurv` estimator that does the ensembling of 
 multiple `IcareSurv` estimators. 
 
 The models make predictions that are **anti-concordants** with the target. 
 For instance, if the target is the survival in days since baseline, the
-prediction corresonds to the **ranking risk** of death.
+prediction corresponds to the **ranking risk** of death.
 
 
 ## Getting Started
@@ -62,7 +64,7 @@ pip install git+https://github.com/Lrebaud/ICARE.git
 
 ### Utilisation
 
-The model is used like any other scikit-learn estimator:
+The model is used as any other scikit-learn estimator:
 ```python
 from sksurv import datasets
 from sksurv.preprocessing import OneHotEncoder
@@ -80,7 +82,7 @@ print(pred[:5])
 harrell_cindex(y, pred)
 ```
 
-It can be used with all scikit-learn function:
+It can be used with all scikit-learn functions:
 ```python
 from sklearn.model_selection import cross_val_score, ShuffleSplit
 
@@ -104,7 +106,7 @@ y = Surv.from_arrays(event=np.array(event_happened).astype('bool'),
 
 ## Authors
 
-Louis Rebaud : louis.rebaud[at]gmail.com
+Louis Rebaud : [louis.rebaud@gmail.com](mailto:louis.rebaud@gmail.com)
 
 ## Version History
 
