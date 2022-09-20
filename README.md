@@ -1,7 +1,16 @@
 # ICARE
 
+```blockquote
+Rebaud, L., Escobar, T., Khalid, F., Girum, K., Buvat, I.: Head and Neck Tumor and Lymph Node 
+Segmentation and Outcome Prediction from 18F-FDG PET/CT Images: Simplicity is All You Need. 
+In: Lecture Notes in Computer Science (LNCS) Challenges (in press)
+```
+
 This package contains the Individual Coefficient Approximation for Risk Estimation
-(ICARE) survival model. It also includes a dedicated bagging aggregator.
+(ICARE) survival model. 
+
+For ensembling strategies, it also includes a dedicated bagging aggregator.
+
 
 ## Description
 
@@ -26,7 +35,9 @@ To improve the performances, this model can be bagged. The package
 provide `BaggedIcareSurv` estimator which does the ensembling of 
 multiple `IcareSurv` estimators. 
 
-The models make predictions that are anti-concordants with the target.
+The models make predictions that are **anti-concordants** with the target. 
+For instance, if the target is the survival in days since baseline, the
+prediction corresonds to the **ranking risk** of death.
 
 
 ## Getting Started
@@ -101,3 +112,17 @@ Louis Rebaud : louis.rebaud[at]gmail.com
 ## License
 
 This project is licensed under the MIT License - see the LICENSE.md file for details
+
+## Acknowledgements
+
+This package was created as a part of the HEad and neCK TumOR segmentation and outcome prediction in PET/CT images challenge, 3<sup>rd</sup> edition (HECKTOR 2022) and presented by Louis Rebaud and Thibault Escobar at the 25<sup>th</sup> international conference on Medical Image Computing and Computer-Assisted Intervention (MICCAI) congress in Singapore.
+
+## Citation
+
+If you use this package for your research, please cite the following paper:
+
+```blockquote
+Rebaud, L., Escobar, T., Khalid, F., Girum, K., Buvat, I.: Head and Neck Tumor and Lymph Node 
+Segmentation and Outcome Prediction from 18F-FDG PET/CT Images: Simplicity is All You Need. 
+In: Lecture Notes in Computer Science (LNCS) Challenges (in press)
+```
