@@ -5,11 +5,10 @@
    <br> ICARE
 </h1>
 
-```blockquote
-Rebaud, L.*, Escobar, T.*, Khalid, F., Girum, K., Buvat, I.: Head and Neck Tumor and Lymph Node 
+> Rebaud, L.\*, Escobar, T.\*, Khalid, F., Girum, K., Buvat, I.: Head and Neck Tumor and Lymph Node 
 Segmentation and Outcome Prediction from 18F-FDG PET/CT Images: Simplicity is All You Need. 
 In: Lecture Notes in Computer Science (LNCS) Challenges (in press)
-```
+
 
 This package contains the Individual Coefficient Approximation for Risk Estimation
 (ICARE) survival model.
