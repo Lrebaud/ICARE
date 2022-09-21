@@ -1,4 +1,6 @@
 [![PyPI version](https://badge.fury.io/py/icare.svg)](https://badge.fury.io/py/icare)
+[![codecov](https://codecov.io/github/Lrebaud/ICARE/branch/main/graph/badge.svg?token=W4D5C373NR)](https://codecov.io/github/Lrebaud/ICARE)
+[![GitHub license](https://img.shields.io/github/license/Lrebaud/ICARE)](https://github.com/Lrebaud/ICARE/blob/main/LICENSE)
 
 <h1>
   <img align="right" height="80" src="https://raw.githubusercontent.com/Lrebaud/ICARE/main/img/logo.png">
