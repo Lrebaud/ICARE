@@ -15,7 +15,7 @@ setup(
     url='https://github.com/Lrebaud/ICARE',
     author='Louis Rebaud',
     author_email='louis.rebaud@gmail.com',
-    license="MIT",
+    license="Apache License 2.0",
     packages=['icare'],
     install_requires=[
         'seaborn',
@@ -32,7 +32,7 @@ setup(
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
-        "License :: OSI Approved :: MIT License",
+        "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
 )
