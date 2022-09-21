@@ -61,6 +61,9 @@ or via GitHub
 pip install git+https://github.com/Lrebaud/ICARE.git
 ```
 
+### Documentation
+Coming soon.
+
 ### Utilisation
 
 The model is used as any other scikit-learn estimator:
