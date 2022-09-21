@@ -103,7 +103,7 @@ y = Surv.from_arrays(event=np.array(event_happened).astype('bool'),
 ```
 
 
-## Authors
+## Author
 
 Louis Rebaud: [louis.rebaud@gmail.com](mailto:louis.rebaud@gmail.com)
 
