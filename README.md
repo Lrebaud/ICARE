@@ -1,7 +1,7 @@
 [![PyPI version](https://badge.fury.io/py/icare.svg)](https://badge.fury.io/py/icare)
 
 <h1>
-  <img align="right" height="100" src="https://raw.githubusercontent.com/Lrebaud/ICARE/main/img/logo.png">
+  <img align="right" height="80" src="https://raw.githubusercontent.com/Lrebaud/ICARE/main/img/logo.png">
    <br> ICARE
 </h1>
 
