@@ -12,9 +12,9 @@ In: Lecture Notes in Computer Science (LNCS) Challenges (in press)
 
 
 This package contains the Individual Coefficient Approximation for Risk Estimation
-(ICARE) survival model.
-For ensembling strategies, it also includes a dedicated bagging aggregator.
+(ICARE) survival model. For ensembling strategies, it also includes a dedicated bagging aggregator.
 
+This model was the winning solution for the [MICCAI 2022](https://conferences.miccai.org/2022/en/) HEad and neCK TumOR segmentation challenge ([HECKTOR 2022](https://hecktor.grand-challenge.org/)) outcome prediction task.
 
 ## Description
 
