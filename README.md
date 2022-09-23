@@ -132,5 +132,5 @@ If you use this package for your research, please cite the following paper:
 ```blockquote
 Rebaud, L.*, Escobar, T.*, Khalid, F., Girum, K., Buvat, I.: 
 Head and Neck Tumor and Lymph Node Segmentation and Outcome Prediction from 18F-FDG PET/CT Images: Simplicity is All You Need. 
-In: In: Lecture Notes in Computer Science (LNCS) Challenges (in press)
+In: Lecture Notes in Computer Science (LNCS) Challenges (in press)
 ```
