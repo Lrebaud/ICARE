@@ -14,8 +14,7 @@ In: Lecture Notes in Computer Science (LNCS) Challenges (under review)
 This package contains the Individual Coefficient Approximation for Risk Estimation
 (ICARE) survival model. For ensembling strategies, it also includes a dedicated bagging aggregator.
 
-This model was the winning solution for the [MICCAI 2022](https://conferences.miccai.org/2022/en/) challenge: HEad and neCK TumOR 
-segmentation and outcome prediction in PET/CT images ([HECKTOR 2022](https://hecktor.grand-challenge.org/)) for the outcome prediction task.
+This model was the winning solution for the [MICCAI 2022](https://conferences.miccai.org/2022/en/) challenge: HEad and neCK TumOR ([HECKTOR](https://hecktor.grand-challenge.org/)) for the outcome prediction task from PET/CT.
 
 ## Description
 
