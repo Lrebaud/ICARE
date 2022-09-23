@@ -54,7 +54,7 @@ prediction corresponds to the **ranking risk** of death.
 
 ### Installing
 
-* Via PyPI:
+Via PyPI:
 ```shell
 pip install icare
 ```
