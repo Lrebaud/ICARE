@@ -8,7 +8,7 @@
 
 > Rebaud, L.\*, Escobar, T.\*, Khalid, F., Girum, K., Buvat, I.: 
 Head and Neck Tumor and Lymph Node Segmentation and Outcome Prediction from 18F-FDG PET/CT Images: Simplicity is All You Need. 
-In: Lecture Notes in Computer Science (LNCS) Challenges (in press)
+In: Lecture Notes in Computer Science (LNCS) Challenges (under review)
 
 
 This package contains the Individual Coefficient Approximation for Risk Estimation
@@ -130,5 +130,5 @@ This package was created as a part of the HEad and neCK TumOR segmentation and o
 If you use this package for your research, please cite the following paper:
 
 ```blockquote
-Rebaud, L.*, Escobar, T.*, Khalid, F., Girum, K., Buvat, I.: Head and Neck Tumor and Lymph Node Segmentation and Outcome Prediction from 18F-FDG PET/CT Images: Simplicity is All You Need. In: Lecture Notes in Computer Science (LNCS) Challenges (in press)
+Rebaud, L.*, Escobar, T.*, Khalid, F., Girum, K., Buvat, I.: Head and Neck Tumor and Lymph Node Segmentation and Outcome Prediction from 18F-FDG PET/CT Images: Simplicity is All You Need. In: Lecture Notes in Computer Science (LNCS) Challenges (under review)
 ```
