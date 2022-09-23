@@ -6,14 +6,16 @@
    <br> ICARE
 </h1>
 
-> Rebaud, L.\*, Escobar, T.\*, Khalid, F., Girum, K., Buvat, I.: Head and Neck Tumor and Lymph Node 
-Segmentation and Outcome Prediction from 18F-FDG PET/CT Images: Simplicity is All You Need. In: Head and Neck Tumor Segmentation and Outcome Prediction. HECKTOR 2022. Lecture Notes in Computer Science (LNCS) (in press).
+> Rebaud, L.*, Escobar, T.*, Khalid, F., Girum, K., Buvat, I.: 
+Head and Neck Tumor and Lymph Node Segmentation and Outcome Prediction from 18F-FDG PET/CT Images: Simplicity is All You Need. 
+In: Lecture Notes in Computer Science (LNCS) Challenges (in press)
 
 
 This package contains the Individual Coefficient Approximation for Risk Estimation
 (ICARE) survival model. For ensembling strategies, it also includes a dedicated bagging aggregator.
 
-This model was the winning solution for the [MICCAI 2022](https://conferences.miccai.org/2022/en/) HEad and neCK TumOR segmentation challenge ([HECKTOR 2022](https://hecktor.grand-challenge.org/)) outcome prediction task.
+This model was the winning solution for the [MICCAI 2022](https://conferences.miccai.org/2022/en/) challenge: HEad and neCK TumOR 
+segmentation and outcome prediction in PET/CT images ([HECKTOR 2022](https://hecktor.grand-challenge.org/)) for the outcome prediction task.
 
 ## Description
 
@@ -128,6 +130,7 @@ This package was created as a part of the HEad and neCK TumOR segmentation and o
 If you use this package for your research, please cite the following paper:
 
 ```blockquote
-Rebaud, L.*, Escobar, T.*, Khalid, F., Girum, K., Buvat, I.: Head and Neck Tumor and Lymph Node 
-Segmentation and Outcome Prediction from 18F-FDG PET/CT Images: Simplicity is All You Need. In: Head and Neck Tumor Segmentation and Outcome Prediction. HECKTOR 2022. Lecture Notes in Computer Science (LNCS) (in press).
+Rebaud, L.*, Escobar, T.*, Khalid, F., Girum, K., Buvat, I.: 
+Head and Neck Tumor and Lymph Node Segmentation and Outcome Prediction from 18F-FDG PET/CT Images: Simplicity is All You Need. 
+In: In: Lecture Notes in Computer Science (LNCS) Challenges (in press)
 ```
