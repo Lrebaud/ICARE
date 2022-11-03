@@ -1,9 +1,9 @@
 [![PyPI version](https://badge.fury.io/py/icare.svg)](https://badge.fury.io/py/icare)
+[![Downloads](https://pepy.tech/badge/icare/month)](https://pepy.tech/project/icare)
 [![Python package](https://github.com/Lrebaud/ICARE/actions/workflows/python-package.yml/badge.svg)](https://github.com/Lrebaud/ICARE/actions/workflows/python-package.yml)
 [![codecov](https://codecov.io/github/Lrebaud/ICARE/branch/main/graph/badge.svg?token=W4D5C373NR)](https://codecov.io/github/Lrebaud/ICARE)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Python 3.6](https://img.shields.io/badge/python-3.6--3.10-blue)](https://www.python.org/downloads/release/python-360/)
-
 
 <h1>
   <img align="right" height="80" src="https://raw.githubusercontent.com/Lrebaud/ICARE/main/img/logo.png">
