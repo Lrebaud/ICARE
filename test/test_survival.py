@@ -132,75 +132,75 @@ def test_sksurv_datasets_bagged():
         assert score > 0.5
 
 
-def test_hecktor():
-    df = pd.read_csv('data/df_train.csv', index_col='PatientID')
-    features = list(set(df.columns.tolist()) - {'Relapse', 'RFS', 'Task 1', 'Task 2', 'CenterID'})
-    features = [x for x in features if 'lesions_merged' not in x and 'lymphnodes_merged' not in x]
-    extra_features = ['Gender',
-                      'Age',
-                      'Weight',
-                      'Tobacco',
-                      'Alcohol',
-                      'Performance status',
-                      'HPV status (0=-, 1=+)',
-                      'Surgery',
-                      'Chemotherapy', 'nb_lesions', 'nb_lymphnodes', 'whole_body_scan']
-    features_groups = np.unique([x.split('_shape_')[0].split('_PT_')[0].split('_CT_')[0] for x in features])
-    features_groups = list(set(features_groups) - set(extra_features))
-    features_groups = [x + '_' for x in features_groups]
-    features_groups.append('extra_features')
-
-    groups_to_use = ['everything_mergedshell4mm_',
-                     'everything_merged_',
-                     'everything_merged4_',
-                     'everything_mergeddilat2mm_', ]
-
-    params = {'max_features': 20. / df.shape[1],
-              'rho': 0.66,
-              'cmin': 0.53,
-              'sign_method': 'harrell',
-              'mandatory_features': extra_features,
-              'features_groups_to_use': [features_groups.index(x) for x in groups_to_use]
-              }
-
-    y = Surv.from_arrays(event=df['Relapse'].values,
-                         time=df['RFS'].values)
-    X = df[features]
-    mask_keep = (X.isna().sum(axis=1) < 1000).values
-    X, y = X.iloc[mask_keep], y[mask_keep]
-
-    features_groups_id = []
-    for f in X.columns:
-        if f in extra_features:
-            features_groups_id.append(features_groups.index('extra_features'))
-        else:
-            group = f.split('_shape_')[0].split('_PT_')[0].split('_CT_')[0] + '_'
-            features_groups_id.append(features_groups.index(group))
-
-    def worker_cv_paral(model, X, y, feature_group, train_index, test_index):
-        model.fit(X.iloc[train_index], y[train_index], feature_groups=feature_group)
-        pred = model.predict(X.iloc[test_index])
-        return harrell_cindex(y[test_index], pred)
-
-
-    def cv_paral(model, X, y, feature_group, n_folds, n_jobs):
-        cv = ShuffleSplit(n_splits=n_folds, test_size=.5)
-        scores = Parallel(n_jobs=n_jobs)(delayed(worker_cv_paral)(model, X, y, feature_group, train_index, test_index)
-                                     for train_index, test_index in cv.split(X))
-        return np.nanmean(scores)
-
-    _ = cv_paral(IcareSurvival(**params), X, y, features_groups_id, n_folds=1, n_jobs=1)
-    score = cv_paral(IcareSurvival(**params), X, y, features_groups_id, n_folds=64, n_jobs=-1)
-    assert score > 0.64
-
-    # ml = BaggedIcareSurvival(n_estimators=100,
-    #                          parameters_sets=[params],
-    #                          aggregation_method='median',
-    #                          n_jobs=1,
-    #                          random_state=None)
-    # score = cv_paral(ml, X, y, features_groups_id, n_folds=1)
-    # assert score > 0.67
-
+# def test_hecktor():
+#     df = pd.read_csv('data/df_train.csv', index_col='PatientID')
+#     features = list(set(df.columns.tolist()) - {'Relapse', 'RFS', 'Task 1', 'Task 2', 'CenterID'})
+#     features = [x for x in features if 'lesions_merged' not in x and 'lymphnodes_merged' not in x]
+#     extra_features = ['Gender',
+#                       'Age',
+#                       'Weight',
+#                       'Tobacco',
+#                       'Alcohol',
+#                       'Performance status',
+#                       'HPV status (0=-, 1=+)',
+#                       'Surgery',
+#                       'Chemotherapy', 'nb_lesions', 'nb_lymphnodes', 'whole_body_scan']
+#     features_groups = np.unique([x.split('_shape_')[0].split('_PT_')[0].split('_CT_')[0] for x in features])
+#     features_groups = list(set(features_groups) - set(extra_features))
+#     features_groups = [x + '_' for x in features_groups]
+#     features_groups.append('extra_features')
+#
+#     groups_to_use = ['everything_mergedshell4mm_',
+#                      'everything_merged_',
+#                      'everything_merged4_',
+#                      'everything_mergeddilat2mm_', ]
+#
+#     params = {'max_features': 20. / df.shape[1],
+#               'rho': 0.66,
+#               'cmin': 0.53,
+#               'sign_method': 'harrell',
+#               'mandatory_features': extra_features,
+#               'features_groups_to_use': [features_groups.index(x) for x in groups_to_use]
+#               }
+#
+#     y = Surv.from_arrays(event=df['Relapse'].values,
+#                          time=df['RFS'].values)
+#     X = df[features]
+#     mask_keep = (X.isna().sum(axis=1) < 1000).values
+#     X, y = X.iloc[mask_keep], y[mask_keep]
+#
+#     features_groups_id = []
+#     for f in X.columns:
+#         if f in extra_features:
+#             features_groups_id.append(features_groups.index('extra_features'))
+#         else:
+#             group = f.split('_shape_')[0].split('_PT_')[0].split('_CT_')[0] + '_'
+#             features_groups_id.append(features_groups.index(group))
+#
+#     def worker_cv_paral(model, X, y, feature_group, train_index, test_index):
+#         model.fit(X.iloc[train_index], y[train_index], feature_groups=feature_group)
+#         pred = model.predict(X.iloc[test_index])
+#         return harrell_cindex(y[test_index], pred)
+#
+#
+#     def cv_paral(model, X, y, feature_group, n_folds, n_jobs):
+#         cv = ShuffleSplit(n_splits=n_folds, test_size=.5)
+#         scores = Parallel(n_jobs=n_jobs)(delayed(worker_cv_paral)(model, X, y, feature_group, train_index, test_index)
+#                                      for train_index, test_index in cv.split(X))
+#         return np.nanmean(scores)
+#
+#     _ = cv_paral(IcareSurvival(**params), X, y, features_groups_id, n_folds=1, n_jobs=1)
+#     score = cv_paral(IcareSurvival(**params), X, y, features_groups_id, n_folds=64, n_jobs=-1)
+#     assert score > 0.64
+#
+#     # ml = BaggedIcareSurvival(n_estimators=100,
+#     #                          parameters_sets=[params],
+#     #                          aggregation_method='median',
+#     #                          n_jobs=1,
+#     #                          random_state=None)
+#     # score = cv_paral(ml, X, y, features_groups_id, n_folds=1)
+#     # assert score > 0.67
+#
 
 def test_reproducible_simple():
     for _ in range(3):
