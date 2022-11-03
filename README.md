@@ -1,4 +1,5 @@
 [![PyPI version](https://badge.fury.io/py/icare.svg)](https://badge.fury.io/py/icare)
+[![Python package](https://github.com/Lrebaud/ICARE/actions/workflows/python-package.yml/badge.svg)](https://github.com/Lrebaud/ICARE/actions/workflows/python-package.yml)
 [![codecov](https://codecov.io/github/Lrebaud/ICARE/branch/main/graph/badge.svg?token=W4D5C373NR)](https://codecov.io/github/Lrebaud/ICARE)
 
 <h1>
