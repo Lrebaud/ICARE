@@ -1,11 +1,11 @@
 from icare.base import IcareBase, BaggedIcareBase
-from icare.metrics import uno_cindex, tAUC, harrell_cindex, abs_cindex
+from icare.metrics import pearson_eval, spearman_eval
 
 
-class IcareSurvival(IcareBase):
+class IcareRanker(IcareBase):
     """
-        Icare estimator adapted to censored targets.
-        This survival model assign weights of -1 or +1 to features to reduce
+        Icare estimator adapted to rank continuous targets (uncalibrated regression).
+        This model assign weights of -1 or +1 to features to reduce
         overfitting risk. It evaluates features in univariate to reduce this risk
         even more.
         Predicts a continuous value that rank the samples (not calibrated).
@@ -17,13 +17,11 @@ class IcareSurvival(IcareBase):
             each pair that has an absolute correlation > rho.
         correlation_method: 'pearson' or 'spearman', default='pearson'
             How to compute the correlation between feature
-        sign_method: a string, default='tAUC,harrell,uno'
+        sign_method: a string, default='pearson,spearman'
             Which method to use to determine the signs of the feature.
             It should be string containing at least one of :
-            - 'harrell': Harrell's concordance index (C-index)
-            - 'uno': 'Uno's concordance index (attempt to make Harrell's C-index
-            more robust)
-            - 'tAUC': time-dependant ROC-AUC
+            - 'pearson': Pearson's correlation with the target
+            - 'spearman': Spearman's correlation with the target
             If multiple method are selected, they should be separated by a comma. In such cases,
             only the features that have the same sign for all methods will be used by the model
         cmin: None or a float in [0.5, 1[, default=None
@@ -51,7 +49,7 @@ class IcareSurvival(IcareBase):
     def __init__(self,
                  rho=None,
                  correlation_method='pearson',
-                 sign_method='tAUC,harrell,uno',
+                 sign_method='pearson,spearman',
                  cmin=None,
                  max_features=1.,
                  features_groups_to_use=None,
@@ -59,18 +57,14 @@ class IcareSurvival(IcareBase):
                  random_state=None):
 
         sign_eval_method, sign_eval_criteria, abs_fnc = {}, {}, {}
-        if 'uno' in sign_method:
-            sign_eval_method['uno'] = uno_cindex
-            sign_eval_criteria['uno'] = 0.5
-            abs_fnc['uno'] = abs_cindex
-        if 'tAUC' in sign_method:
-            sign_eval_method['tAUC'] = tAUC
-            sign_eval_criteria['tAUC'] = 0.5
-            abs_fnc['tAUC'] = abs_cindex
-        if 'harrell' in sign_method:
-            sign_eval_method['harrell'] = harrell_cindex
-            sign_eval_criteria['harrell'] = 0.5
-            abs_fnc['harrell'] = abs_cindex
+        if 'pearson' in sign_method:
+            sign_eval_method['pearson'] = pearson_eval
+            sign_eval_criteria['pearson'] = 0.
+            abs_fnc['pearson'] = abs
+        if 'spearman' in sign_method:
+            sign_eval_method['spearman'] = spearman_eval
+            sign_eval_criteria['spearman'] = 0.
+            abs_fnc['spearman'] = abs
 
         super().__init__(
             rho=rho,
@@ -87,10 +81,10 @@ class IcareSurvival(IcareBase):
         )
 
 
-class BaggedIcareSurvival(BaggedIcareBase):
+class BaggedIcareRanker(BaggedIcareBase):
     """
-        Bagged IcareSurvival estimator.
-        This survival model ensemble a set of IcareSurvival models with bootstrap
+        Bagged IcareRanker estimator.
+        This survival model ensemble a set of IcareRanker models with bootstrap
         resampling of their respective train sets. Once fitted, each model
         make a prediction and all their prediction are aggregated.
         Predicts a continuous value that rank the samples (not calibrated).
@@ -121,7 +115,7 @@ class BaggedIcareSurvival(BaggedIcareBase):
                  n_jobs=1,
                  random_state=None):
         super().__init__(
-            estimator=IcareSurvival,
+            estimator=IcareRanker,
             n_estimators=n_estimators,
             parameters_sets=parameters_sets,
             aggregation_method=aggregation_method,

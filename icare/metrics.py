@@ -2,6 +2,9 @@ from sklearn.metrics import make_scorer
 from sksurv.metrics import concordance_index_censored, cumulative_dynamic_auc, concordance_index_ipcw
 import numpy as np
 from sksurv.util import Surv
+from scipy.stats import pearsonr, spearmanr
+
+
 def check_target(y):
     is_surv = False
     try:
@@ -13,7 +16,6 @@ def check_target(y):
     if not is_surv:
         return Surv.from_arrays(event=np.full(len(y), True),
                                 time=y)
-
     return y
 
 def harrell_cindex(y_true, y_pred):
@@ -38,21 +40,6 @@ def tAUC(y_true, y_pred):
     return auc
 
 from sksurv.util import Surv
-from sksurv.linear_model import CoxPHSurvivalAnalysis
-
-def hazard_ratio(y_true, y_pred):
-    y_pred = (y_pred - np.mean(y_pred)) / np.max([1e-6, np.std(y_pred)])
-    event = np.array([x[0] for x in y_true]).astype('bool')
-    time = np.array([x[1] for x in y_true]).astype('float32')
-    time = (time - np.mean(time)) / np.max([1e-6, np.std(time)])
-    y_true = Surv.from_arrays(event=event, time=time)
-    cph = CoxPHSurvivalAnalysis()
-    cph.fit(y_pred.reshape(-1,1), y_true)
-    coef = cph.coef_[0]
-    return coef
-
-# def HR()
-
 
 harrell_cindex_scorer = make_scorer(score_func=harrell_cindex,
                                     greater_is_better=True)
@@ -64,4 +51,13 @@ uno_cindex_scorer = make_scorer(score_func=uno_cindex,
 tAUC_scorer = make_scorer(score_func=tAUC,
                           greater_is_better=True)
 
+def abs_cindex(x):
+    return np.max([x, 1.-x])
+
+
+def pearson_eval(x,y):
+    return pearsonr(x,y)[0]
+
+def spearman_eval(x,y):
+    return spearmanr(x,y)[0]
 

@@ -8,7 +8,7 @@ long_description = (this_directory / "README.md").read_text()
 
 setup(
     name='icare',
-    version='0.0.6',
+    version='0.1.0',
     description='ICARE models',
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -18,11 +18,13 @@ setup(
     license="Apache License 2.0",
     packages=['icare'],
     install_requires=[
+        'numpy',
         'pandas',
         'seaborn',
+        'scikit-learn',
         'scikit-survival',
     ],
-    tests_require=['pytest'],
+    tests_require=['statsmodels', 'pytest'],
 
     classifiers=[
         "Development Status :: 3 - Alpha",
