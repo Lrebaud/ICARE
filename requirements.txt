@@ -1,0 +1,10 @@
+pandas
+statsmodels
+scikit-learn
+icare
+joblib
+numpy
+scipy
+matplotlib
+seaborn
+setuptools
