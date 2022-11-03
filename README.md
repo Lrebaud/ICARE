@@ -17,9 +17,8 @@ This model was the winning solution for the [MICCAI 2022](https://conferences.mi
 
 ## Description
 
-The Individual Coefficient Approximation for Risk Estimation (ICARE) survival model
-uses a minimal learning strategy to reduce to risk of overfitting on the often 
-noisy and censored survival data.
+The Individual Coefficient Approximation for Risk Estimation (ICARE) model
+uses a minimal learning strategy to reduce to risk of overfitting.
 To do so:
  * drop highly correlated features
  * for each feature:
@@ -31,16 +30,25 @@ To do so:
 This makes the model more robust to overfitting. It also makes it
 resilient to the curse of dimensionality. We hypothesize that it is 
 better to have too many features than too few for this model.
-This algorithm is implemented in the `IcareSurv` estimator in this
-package.
+This algorithm is implemented in the following classes:
+ * `IcareClassifier` estimator for classification tasks
+ * `IcareRanker` estimator for ranking tasks (not calibrated regression)
+ * `IcareSurvival` estimator for survival prediction tasks package.
 
-To improve the performance, this model can be bagged. The package
-provides `BaggedIcareSurv` estimator that does the ensembling of 
-multiple `IcareSurv` estimators. 
+To improve the performance, this package also provides bagged versions
+of these estimators:
+ * `BaggedIcareClassifier` estimator for classification tasks
+ * `BaggedIcareRanker` estimator for ranking tasks (not calibrated regression)
+ * `BaggedIcareSurvival` estimator for survival prediction tasks package.
 
-The models make predictions that are **anti-concordants** with the target. 
-For instance, if the target is the survival in days since baseline, the
-prediction corresponds to the **ranking risk** of death.
+
+The survival models (`IcareSurvival` and `BaggedIcareSurvival`) predict
+a risk score. Therefore, there predictions are **anti-concordants** with
+the target.
+
+On the other hand, the ranking models (`IcareRanker` and `BaggedIcareRanker`)
+try to correctly the samples according to the target, so there predictions
+are **concordants** with the target.
 
 
 ## Getting Started
@@ -48,6 +56,9 @@ prediction corresponds to the **ranking risk** of death.
 ### Dependencies
 
 * Python 3.6 or later
+* pandas
+* seaborn
+* scikit-learn
 * scikit-survival
 
 ### Installing
@@ -64,53 +75,22 @@ pip install git+https://github.com/Lrebaud/ICARE.git
 ### Documentation
 Coming soon.
 
+
 ### Utilisation
 
-The model is used as any other scikit-learn estimator:
-```python
-from sksurv import datasets
-from sksurv.preprocessing import OneHotEncoder
-from icare.metrics import harrell_cindex
-from icare.survival import IcareSurv, BaggedIcareSurv
+The model is used as any other scikit-learn estimator.
 
-
-X, y = datasets.load_veterans_lung_cancer()
-X = OneHotEncoder().fit_transform(X)
-
-model = IcareSurv()
-model.fit(X, y)
-pred = model.predict(X)
-print(pred[:5])
-harrell_cindex(y, pred)
-```
-
-It can be used with all scikit-learn functions:
-```python
-from sklearn.model_selection import cross_val_score, ShuffleSplit
-
-model = IcareSurv()
-score = cross_val_score(model, X, y,
-                        cv=ShuffleSplit(n_splits=20, test_size=.25),
-                        n_jobs=-1,
-                        scoring=harrell_cindex_scorer).mean()
-
-```
-
-If you are working with a censored target, you need to create a
-structured array containing both the time and the censoring:
-
-```python
-from sksurv.util import Surv
-y = Surv.from_arrays(event=np.array(event_happened).astype('bool'),
-                     time=time)
-```
-
+You can find detailed notebooks in the `notebooks` folder
+of this repository showing how to use the package for each type of datasets.
 
 ## Author
 
 Louis Rebaud: [louis.rebaud@gmail.com](mailto:louis.rebaud@gmail.com)
 
 ## Version History
+
+* 0.1.0
+    * Add classification and ranking support
 
 * 0.0.1
     * Initial Release
