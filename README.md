@@ -10,9 +10,10 @@
    <br> ICARE
 </h1>
 
-> Rebaud, L.\*, Escobar, T.\*, Khalid, F., Girum, K., Buvat, I.: 
-Simplicity is All You Need: Out-of-the-Box nnUNet followed by Binary-Weighted Radiomic Model for Segmentation and Outcome Prediction in Head and Neck PET/CT. 
-In: Lecture Notes in Computer Science (LNCS) Challenges (under review)
+> Rebaud, L., Escobar, T., Khalid, F., Girum, K., Buvat, I. (2023).
+Simplicity Is All You Need: Out-of-the-Box nnUNet Followed by Binary-Weighted Radiomic Model for Segmentation and Outcome Prediction in Head and Neck PET/CT.
+In: Andrearczyk, V., Oreiller, V., Hatt, M., Depeursinge, A. (eds) Head and Neck Tumor Segmentation and Outcome Prediction.
+HECKTOR 2022. Lecture Notes in Computer Science, vol 13626. Springer, Cham.
 
 This package contains the Individual Coefficient Approximation for Risk Estimation
 (ICARE) survival model. For ensembling strategies, it also includes a dedicated bagging aggregator.
@@ -109,8 +110,8 @@ This package was created as a part of the HEad and neCK TumOR segmentation and o
 
 ## Citation
 
-If you use this package for your research, please cite the following [paper](https://dx.doi.org/10.13140/RG.2.2.30709.04328/1) (preprint):
+If you use this package for your research, please cite the following [paper](http://dx.doi.org/10.1007/978-3-031-27420-6_13):
 
 ```blockquote
-Rebaud, L.*, Escobar, T.*, Khalid, F., Girum, K., Buvat, I.: Simplicity is All You Need: Out-of-the-Box nnUNet followed by Binary-Weighted Radiomic Model for Segmentation and Outcome Prediction in Head and Neck PET/CT. In: Lecture Notes in Computer Science (LNCS) Challenges (under review)
+Rebaud, L., Escobar, T., Khalid, F., Girum, K., Buvat, I. (2023). Simplicity Is All You Need: Out-of-the-Box nnUNet Followed by Binary-Weighted Radiomic Model for Segmentation and Outcome Prediction in Head and Neck PET/CT. In: Andrearczyk, V., Oreiller, V., Hatt, M., Depeursinge, A. (eds) Head and Neck Tumor Segmentation and Outcome Prediction. HECKTOR 2022. Lecture Notes in Computer Science, vol 13626. Springer, Cham.
 ```
